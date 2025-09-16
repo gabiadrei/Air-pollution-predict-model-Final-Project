@@ -1,0 +1,1 @@
+[out:json];area['name'='מועצה אזורית מגידו']->.searchArea;(node['place'~'city|village|town|hamlet'](area.searchArea); relation['admin_level'='8'](area.searchArea););out center;

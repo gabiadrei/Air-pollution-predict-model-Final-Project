@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>מערכת איכות הסביבה</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Heebo', 'sans-serif'] },
+                    colors: {
+                        'primary-green': '#34C759',
+                        'light-green': '#D2F5DC',
+                        'light-gray': '#F5F6F8',
+                        'dark-gray': '#737373',
+                        'border-gray': '#E5E7EB',
+                        'teal-blue': '#4A90E2',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap');
+        body { font-family: 'Heebo', sans-serif; background-color: #F8F9FA; }
+
+        .app-header {
+            background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,.1);
+            padding: 10px 20px; display:flex; justify-content:space-between; align-items:center;
+            position:fixed; top:0; left:0; right:0; z-index:1000;
+        }
+        .logo-section { display:flex; align-items:center; gap:10px; }
+        .header-logo-container {
+            width:40px; height:40px; background-color:#3DDC84; color:white; border-radius:50%;
+            display:flex; justify-content:center; align-items:center; font-size:1rem;
+        }
+        .header-text h2 { font-size:1.2rem; margin:0; color:#004d40; }
+        .header-text p { font-size:.8rem; margin:0; color:#666; }
+        .nav-links a { text-decoration:none;color:#666;padding:10px 15px;margin:0 5px;border-radius:20px;transition:.3s; }
+        .nav-links a:hover, .nav-links a.active { background-color:#e6f6ec; color:#3DDC84; }
+        .user-profile { font-size:1.5rem; color:#666; }
+
+        #leafletMap { height:192px; border-radius:.5rem; border:1px solid #E5E7EB; }
+
+        .message-box, .modal-backdrop {
+            position:fixed; top:0; left:0; right:0; bottom:0; z-index:1000;
+            background-color:rgba(0,0,0,.5); display:flex; justify-content:center; align-items:center;
+        }
+        .message-box .message-content, .modal-content {
+            background-color:#fff; padding:2rem; border-radius:.5rem;
+            box-shadow:0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -2px rgba(0,0,0,.05);
+            text-align:center; direction:rtl; max-width:500px; width:90%;
+        }
+        .loading-spinner {
+            border:4px solid #f3f3f3; border-top:4px solid #3498db; border-radius:50%;
+            width:30px; height:30px; animation:spin 1s linear infinite;
+        }
+        @keyframes spin { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
+
+        .aqi-good { color:#34C759; }
+        .aqi-moderate { color:#F8B400; }
+        .aqi-unhealthy { color:#FF3B30; }
+    </style>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.8.7/chosen.jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.8.7/chosen.min.css"/>
+</head>
+<body class="bg-light-gray flex flex-col min-h-screen">
+
+    <header class="app-header">
+        <div class="logo-section">
+            <div class="header-logo-container"><i class="fas fa-globe-americas"></i></div>
+            <div class="header-text">
+                <h2>רשות איכות הסביבה</h2>
+                <p>מערכת חיזוי זיהום אוויר</p>
+            </div>
+        </div>
+        <nav class="nav-links">
+            <a href="/main" ><i class="fas fa-map-marked-alt"></i> מפה ארצית</a>
+            <a href="/predict" class="active"><i class="fas fa-chart-line"></i> חיזוי יומי</a>
+            <a href="/reports"><i class="fas fa-file-alt"></i> דוחות</a>
+        </nav>
+        <div class="user-profile"><i class="fas fa-user-circle"></i></div>
+    </header>
+
+    <main class="flex-grow mt-24 mb-8 container mx-auto px-4 md:px-8 lg:px-12">
+        <h2 class="text-3xl font-bold text-gray-800 text-center mb-8">חיזוי עירוני מתקדם</h2>
+        <p class="text-lg text-dark-gray text-center mb-12">חיזוי זיהום אוויר על בסיס מאפיינים סביבתיים</p>
+
+        <div id="main-cards-container" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="flex flex-col">
+                <div class="bg-white rounded-xl shadow-lg p-4 mb-4 flex justify-around">
+                    <label class="flex items-center text-sm font-medium text-dark-gray cursor-pointer">
+                        <input type="radio" name="inputMethod" value="select" class="ml-2" checked onchange="toggleInputMethod()">
+                        בחר עיר
+                    </label>
+                    <label class="flex items-center text-sm font-medium text-dark-gray cursor-pointer">
+                        <input type="radio" name="inputMethod" value="manual" class="ml-2" onchange="toggleInputMethod()">
+                        הזנה ידנית
+                    </label>
+                </div>
+
+                <div id="citySelectionCard" class="bg-white rounded-xl shadow-lg p-6 border border-border-gray flex flex-col">
+                    <div class="flex items-center mb-6">
+                        <div class="bg-teal-100 p-2 rounded-full text-teal-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </div>
+                        <div class="mr-4">
+                            <h3 class="font-bold text-xl">בחירת עיר</h3>
+                            <p class="text-sm text-dark-gray">בחר עיר לביצוע חיזוי איכות אוויר</p>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="city-select" class="block text-sm font-medium text-dark-gray mb-1">בחר עיר...</label>
+                        <select id="city-select" class="w-full border border-border-gray rounded-lg py-2 px-3 text-dark-gray focus:outline-none focus:ring-2 focus:ring-teal-500">
+                            <option value="">בחר עיר...</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-dark-gray mb-1">מפת הניטור</label>
+                        <div id="leafletMap" class="h-48 rounded-lg"></div>
+                    </div>
+
+                    <button id="showParamsBtn1" class="w-full bg-primary-green text-white font-medium py-3 rounded-full flex items-center justify-center shadow-md mt-auto" onclick="validateAndShowEnvParams()">
+                        <span>הצג פרמטרים סביבתיים</span>
+                    </button>
+                </div>
+
+                <div id="manualEntryCard" class="bg-white rounded-xl shadow-lg p-6 border border-border-gray flex-col hidden">
+                    <div class="flex items-center mb-6">
+                        <div class="bg-teal-100 p-2 rounded-full text-teal-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                            </svg>
+                        </div>
+                        <div class="mr-4">
+                            <h3 class="font-bold text-xl">הזנת נתונים ידנית</h3>
+                            <p class="text-sm text-dark-gray">הזן נתונים לביצוע חיזוי</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="col-span-2">
+                            <label class="block text-sm font-medium text-dark-gray mb-1">שם עיר <span class="text-red-500">*</span></label>
+                            <input type="text" id="manualCityName" class="w-full border border-border-gray rounded-lg py-2 px-3 text-dark-gray focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="הכנס שם עיר..." oninput="updateEnvParamsFromManualInput()">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-dark-gray mb-1">כמות אוכלוסיה</label>
+                            <input type="number" id="manualPopulation" class="w-full border border-border-gray rounded-lg py-2 px-3 text-dark-gray focus:outline-none focus:ring-2 focus:ring-teal-500" value="100000" oninput="updateEnvParamsFromManualInput()">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-dark-gray mb-1">כמות מפעלים</label>
+                            <input type="number" id="manualFactories" class="w-full border border-border-gray rounded-lg py-2 px-3 text-dark-gray focus:outline-none focus:ring-2 focus:ring-teal-500" value="25" oninput="updateEnvParamsFromManualInput()">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-dark-gray mb-1">כמות עצים</label>
+                            <input type="number" id="manualTrees" class="w-full border border-border-gray rounded-lg py-2 px-3 text-dark-gray focus:outline-none focus:ring-2 focus:ring-teal-500" value="30000" oninput="updateEnvParamsFromManualInput()">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-dark-gray mb-1">רכבים</label>
+                            <input type="number" id="manualCars" class="w-full border border-border-gray rounded-lg py-2 px-3 text-dark-gray focus:outline-none focus:ring-2 focus:ring-teal-500" value="150000" oninput="updateEnvParamsFromManualInput()">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-dark-gray mb-1">תחנות אוטובוס</label>
+                            <input type="number" id="manualBus" class="w-full border border-border-gray rounded-lg py-2 px-3 text-dark-gray focus:outline-none focus:ring-2 focus:ring-teal-500" value="10000" oninput="updateEnvParamsFromManualInput()">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-dark-gray mb-1">גובה מעל פני הים</label>
+                            <input type="number" id="manualHeight" class="w-full border border-border-gray rounded-lg py-2 px-3 text-dark-gray focus:outline-none focus:ring-2 focus:ring-teal-500" value="10000" oninput="updateEnvParamsFromManualInput()">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-sm font-medium text-dark-gray mb-1">AQI נוכחי <span class="text-red-500">*</span></label>
+                            <input type="number" id="manualAqi" class="w-full border border-border-gray rounded-lg py-2 px-3 text-dark-gray focus:outline-none focus:ring-2 focus:ring-teal-500" value="70" oninput="updateEnvParamsFromManualInput()">
+                        </div>
+                    </div>
+
+                    <button id="showParamsBtn2" class="w-full bg-primary-green text-white font-medium py-3 rounded-full flex items-center justify-center shadow-md mt-6" onclick="validateAndShowEnvParams()">
+                        <span>הצג פרמטרים סביבתיים</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="envParamsCard" class="bg-white rounded-xl shadow-lg p-6 border border-border-gray hidden flex-col">
+                <div class="flex items-center mb-4">
+                    <div class="bg-teal-100 p-2 rounded-full text-teal-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div class="mr-4">
+                        <h3 class="font-bold text-xl">פרמטרים סביבתיים</h3>
+                        <p class="text-sm text-dark-gray">נתונים בסיסיים של העיר לפני הגברה</p>
+                    </div>
+                </div>
+                <h2 id="cityNameDisplay" class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2"></h2>
+
+                <div class="grid grid-cols-3 gap-4 text-center">
+                    <div class="p-4 bg-light-gray rounded-lg">
+                        <p class="text-dark-gray text-sm">כמות עצים</p>
+                        <p id="treesCount" class="text-2xl font-bold mt-1">...</p>
+                    </div>
+                    <div class="p-4 bg-light-gray rounded-lg">
+                        <p class="text-dark-gray text-sm">כמות רכבים</p>
+                        <p id="totalcars" class="text-2xl font-bold mt-1">...</p>
+                    </div>
+                    <div class="p-4 bg-light-gray rounded-lg">
+                        <p class="text-dark-gray text-sm">תחנות אוטובוס</p>
+                        <p id="bus" class="text-2xl font-bold mt-1">...</p>
+                    </div>
+
+                    <div class="p-4 bg-light-gray rounded-lg flex flex-col items-center justify-center">
+                        <div class="flex items-center justify-center mb-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                            </svg>
+                            <p class="text-dark-gray text-sm mr-1">אוכלוסייה</p>
+                        </div>
+                        <p id="populationCount" class="text-2xl font-bold mt-1">...</p>
+                    </div>
+                    <div class="p-4 bg-light-gray rounded-lg flex flex-col items-center justify-center">
+                        <div class="flex items-center justify-center mb-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V4a2 2 0 00-2-2H6zM4 10a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H4zm10-2a2 2 0 00-2-2h-2a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V8zm-2 4a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2h-2z" clip-rule="evenodd"/>
+                            </svg>
+                            <p class="text-dark-gray text-sm mr-1">כמות מפעלים</p>
+                        </div>
+                        <p id="factoriesCount" class="text-2xl font-bold mt-1">...</p>
+                    </div>
+                    <div class="p-4 bg-light-gray rounded-lg flex flex-col items-center justify-center">
+                        <div class="flex items-center justify-center mb-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V4a2 2 0 00-2-2H6zM4 10a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H4zm10-2a2 2 0 00-2-2h-2a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V8zm-2 4a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2h-2z" clip-rule="evenodd"/>
+                            </svg>
+                            <p class="text-dark-gray text-sm mr-1">גובה מעל פני הים</p>
+                        </div>
+                        <p id="cityHeight" class="text-2xl font-bold mt-1">...</p>
+                    </div>
+                    <div class="p-4 bg-light-gray rounded-lg col-span-3 flex flex-col items-center justify-center">
+                        <div class="flex items-center justify-center mb-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                            <p class="text-dark-gray text-sm mr-1">AQI נוכחי</p>
+                        </div>
+                        <p id="aqiCount" class="text-2xl font-bold mt-1">...</p>
+                    </div>
+                </div>
+
+                <button id="predictButton3" class="w-full bg-primary-green text-white font-medium py-3 rounded-full flex items-center justify-center shadow-md mt-6" onclick="showPredictionResults()">
+                    <span>בצע חיזוי AI</span>
+                </button>
+            </div>
+
+            <div id="predictionResultsCard" class="bg-white rounded-xl shadow-lg p-6 border border-border-gray hidden flex-col">
+                <div class="flex items-center mb-6">
+                    <div class="bg-light-green p-2 rounded-full text-primary-green">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        </svg>
+                    </div>
+                    <div class="mr-4">
+                        <h3 class="font-bold text-xl">תוצאות החיזוי</h3>
+                        <p class="text-sm text-dark-gray">ניתוח נתונים מבוסס בינה מלאכותית</p>
+                    </div>
+                </div>
+                <div class="flex-grow flex flex-col items-center justify-center text-center py-4">
+                    <p id="futureAqiValue" class="text-6xl font-extrabold text-primary-green">...</p>
+                    <p id="futureAqiStatus" class="text-xl font-medium text-dark-gray my-2">...</p>
+                    <div class="w-full mt-4">
+                        <div class="flex items-center mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary-green ml-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <p class="text-sm text-dark-gray font-medium">רמת ביטחון בחיזוי</p>
+                        </div>
+                        <div class="w-full bg-light-gray rounded-full h-2.5">
+                            <div id="confidenceBar" class="bg-primary-green h-2.5 rounded-full" style="width:0%"></div>
+                        </div>
+                        <p id="confidenceText" class="text-xs text-dark-gray mt-1">...</p>
+                    </div>
+                    <div class="flex justify-between w-full mt-8 gap-4">
+                        <div class="w-1/2 p-4 bg-light-green rounded-lg text-center">
+                            <p id="currentAqiValue" class="text-4xl font-bold text-primary-green">...</p>
+                            <p class="text-sm text-dark-gray">AQI נוכחי</p>
+                        </div>
+                        <div class="w-1/2 p-4 bg-light-green rounded-lg text-center">
+                            <p id="predictedAqiValue" class="text-4xl font-bold text-primary-green">...</p>
+                            <p class="text-sm text-dark-gray">AQI עתידי</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="showRecommendationsBtn" class="w-full bg-teal-blue text-white font-medium py-3 rounded-full flex items-center justify-center shadow-md mt-6 hidden" onclick="showRecommendationsModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.674M12 3v18m-7.234-7.234a4.5 4.5 0 016.364 6.364ל-3.535 3.536a4.5 4.5 0 01-6.364-6.364l3.535-3.536z" />
+                    </svg>
+                    <span>המלצות בינה מלאכותית</span>
+                </button>
+                <button id="showResultsAnalysisBtn"
+                        class="w-full bg-white text-teל-blue border border-teal-blue font-medium py-3 rounded-full flex items-center justify-center shadow-sm mt-4 hidden"
+                        onclick="showResultsAnalysisModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 3v18m-7-7h18"/>
+                    </svg>
+                    <span>ניתוח תוצאות</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="resultsAnalysisModal" class="modal-backdrop hidden">
+            <div class="modal-content text-right max-w-4xl w-11/12">
+                <div class="flex justify-between items-center mb-4 border-b pb-2">
+                    <h3 class="text-2xl font-bold">ניתוח תוצאות</h3>
+                    <button onclick="hideResultsAnalysisModal()" class="text-gray-500 hover:text-gray-800">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-white rounded-xl border border-border-gray p-4 text-center">
+                        <p class="text-4xl font-extrabold" id="ra-r2">0.00</p>
+                        <p class="text-sm text-dark-gray mt-1">R² Score</p>
+                        <p class="text-xs text-dark-gray mt-1" id="ra-errors">RMSE: – | MAE: –</p>
+                    </div>
+                    <div class="bg-white rounded-xl border border-border-gray p-4 text-center">
+                        <p class="text-4xl font-extrabold" id="ra-features">0</p>
+                        <p class="text-sm text-dark-gray mt-1">פיצ'רים נותחו</p>
+                    </div>
+                    <div class="bg-white rounded-xl border border-border-gray p-4">
+                        <p class="text-sm text-dark-gray mb-2">רמת ביטחון</p>
+                        <div class="w-full bg-light-gray rounded-full h-2.5">
+                            <div id="ra-confidence-bar" class="bg-primary-green h-2.5 rounded-full" style="width:0%"></div>
+                        </div>
+                        <p id="ra-confidence-text" class="text-xs text-dark-gray mt-1 text-center">–</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-border-gray p-4">
+                    <h4 class="text-xl font-bold mb-4">תצוגה מקדימה – חשיבות פיצ'רים</h4>
+                    <div id="ra-features-list" class="space-y-3"></div>
+                </div>
+
+                <div class="mt-6 text-sm text-dark-gray">
+                    <p id="ra-notes">הניתוח מבוסס על התוצאות האחרונות שנוצרו במערכת.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="messageBox" class="message-box hidden">
+            <div class="message-content">
+                <p id="messageText" class="text-base text-gray-800"></p>
+                <button onclick="hideMessageBox()" class="mt-4 px-4 py-2 bg-primary-green text-white rounded-full">סגור</button>
+            </div>
+        </div>
+
+        <div id="recommendationsModal" class="modal-backdrop hidden">
+            <div class="modal-content text-right">
+                <div class="flex justify-between items-center mb-4 border-b pb-2">
+                    <h3 class="text-2xl font-bold">המלצות בינה מלאכותית</h3>
+                    <button onclick="hideRecommendationsModal()" class="text-gray-500 hover:text-gray-800">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div id="recommendationsContent" class="text-lg text-dark-gray text-right">
+                    <div class="flex justify-center items-center h-48">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="p-4 text-center text-sm text-dark-gray bg-white mt-8 shadow-inner">
+        <p>&copy; כל הזכויות שמורות. נבנה על ידי Gemini</p>
+    </footer>
+
+    <script>
+        let cityData = {};
+        let selectedCityData = {};
+        let map;
+        let lastPrediction;
+
+        /* ---- helpers: hide/show + הודעות ---- */
+        function hideEl(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('hidden');
+            el.hidden = true;
+            el.style.display = 'none';
+        }
+        function showEl(id, display = 'flex') {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.remove('hidden');
+            el.hidden = false;
+            el.style.display = display;
+        }
+        function showMessageBox(message) {
+            document.getElementById('messageText').textContent = message;
+            const box = document.getElementById('messageBox');
+            box.classList.remove('hidden');
+            box.style.display = 'flex';
+        }
+        function hideMessageBox() {
+            const box = document.getElementById('messageBox');
+            box.classList.add('hidden');
+            box.style.display = 'none';
+        }
+
+        // --- עזר: שליפת מספר מתוך אלמנט לפי id (כולל טיפול בהפרדות/ריקים) ---
+        function getNumFromEl(id) {
+            const el = document.getElementById(id);
+            if (!el) return 0;
+            const txt = (el.textContent || el.value || '').toString().replace(/[^\d.\-]/g, '');
+            const n = parseFloat(txt);
+            return Number.isFinite(n) ? n : 0;
+        }
+        // --- עזר: טקסט נקי (לשם העיר) ---
+        function getTextFromEl(id) {
+            const el = document.getElementById(id);
+            return el ? (el.textContent || el.value || '').toString().trim() : '';
+        }
+
+        // ====== FETCH & BUILD ======
+        async function fetchCityData() {
+            try {
+                const response = await fetch('static/data/newdatajsonfortest.json');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+
+                cityData = data.reduce((acc, curr) => {
+                    if (curr.hebname) {
+                        acc[curr.hebname] = {
+                            name: curr.hebname,
+                            population: curr.numberofpop,
+                            trees: curr.trees,
+                            factories: curr.num_fact,
+                            cars: curr.cars,
+                            busstations: curr.busStations,
+                            aqi: curr.aqi_global,
+                            belongsto: curr.belogns,
+                            coords: (curr.lat != null && curr.lan != null) ? [curr.lat, curr.lan] : null,
+                            type: curr.type,
+                            city_heights: curr.city_heights,
+                        };
+                    }
+                    return acc;
+                }, {});
+                populateCityDropdown();
+            } catch (err) {
+                console.error('Could not load city data:', err);
+                showMessageBox("אירעה שגיאה בטעינת נתוני הערים. אנא נסה שוב מאוחר יותר.");
+            }
+        }
+
+        function populateCityDropdown() {
+            const $citySelect = $('#city-select');
+            $citySelect.empty().append('<option value="">בחר עיר...</option>');
+            const sorted = Object.values(cityData).sort((a, b) => a.name.localeCompare(b.name, 'he', { sensitivity: 'base' }));
+
+            for (const city of sorted) {
+                $citySelect.append(`<option value="${city.name}">${city.name} (${city.belongsto || 'לא ידוע'})</option>`);
+            }
+
+            if ($citySelect.data('chosen')) {
+                $citySelect.trigger('chosen:updated');
+            } else {
+                $citySelect.chosen({
+                    no_results_text: "לא נמצאו תוצאות עבור",
+                    rtl: true,
+                    width: "100%"
+                });
+            }
+        }
+
+        function hideEnvAndResults() {
+            hideEl('envParamsCard');
+            hideEl('predictionResultsCard');
+            hideEl('showRecommendationsBtn');
+            hideEl('showResultsAnalysisBtn');
+        }
+
+        // ====== UI HELPERS ======
+        function toggleInputMethod() {
+            const selectedMethod = document.querySelector('input[name="inputMethod"]:checked').value;
+            hideEnvAndResults();
+
+            const cityCard = document.getElementById('citySelectionCard');
+            const manualCard = document.getElementById('manualEntryCard');
+            if (selectedMethod === 'select') {
+                cityCard.classList.remove('hidden'); cityCard.classList.add('flex');
+                manualCard.classList.add('hidden'); manualCard.classList.remove('flex-col');
+            } else {
+                manualCard.classList.remove('hidden'); manualCard.classList.add('flex-col');
+                cityCard.classList.add('hidden');      cityCard.classList.remove('flex');
+            }
+        }
+
+        // שינוי עיר
+        $(document).on('change', '#city-select', function () {
+            const selectedCityName = $(this).val();
+            hideEnvAndResults();
+            if (selectedCityName) {
+                selectedCityData = cityData[selectedCityName];
+            } else {
+                selectedCityData = {};
+            }
+        });
+
+        // בדיקה והצגה של פרמטרים
+        function validateAndShowEnvParams() {
+            hideEl('predictionResultsCard');
+            hideEl('showRecommendationsBtn');
+            hideEl('showResultsAnalysisBtn');
+
+            const selectedMethod = document.querySelector('input[name="inputMethod"]:checked').value;
+            if (selectedMethod === 'select') {
+                const selectedCityName = $('#city-select').val();
+                if (!selectedCityName) return showMessageBox("אנא בחר עיר כדי להציג את הפרמטרים.");
+                selectedCityData = cityData[selectedCityName];
+                updateEnvParams(selectedCityData);
+                showEl('envParamsCard', 'flex');
+            } else {
+                const cityName = document.getElementById('manualCityName').value.trim();
+                const aqi = document.getElementById('manualAqi').value.trim();
+                if (cityName === '' || aqi === '') return showMessageBox("שם העיר ורמת ה-AQI הם שדות חובה.");
+                updateEnvParamsFromManualInput();
+                showEl('envParamsCard', 'flex');
+            }
+        }
+
+        function updateEnvParams(data) {
+            if (!data) return;
+            document.getElementById('cityNameDisplay').textContent = data.name || 'אין שם';
+            document.getElementById('treesCount').textContent = (data.trees ?? 'אין נתונים').toLocaleString?.() || data.trees || 'אין נתונים';
+            document.getElementById('bus').textContent = data.busstations?.toLocaleString?.() ?? data.busstations ?? 'אין נתונים';
+            document.getElementById('cityHeight').textContent = data.city_heights?.toLocaleString?.() ?? data.city_heights ?? 'אין נתונים';
+            document.getElementById('totalcars').textContent = data.cars?.toLocaleString?.() ?? data.cars ?? 'אין נתונים';
+            document.getElementById('populationCount').textContent = data.population?.toLocaleString?.() ?? data.population ?? 'אין נתונים';
+            document.getElementById('factoriesCount').textContent = data.factories?.toLocaleString?.() ?? data.factories ?? 'אין נתונים';
+            document.getElementById('aqiCount').textContent = (data.aqi ?? 'אין נתונים');
+
+            if (data.coords && map) map.setView(data.coords, 13);
+        }
+
+        function updateEnvParamsFromManualInput() {
+            const cityName = document.getElementById('manualCityName').value;
+            const population = document.getElementById('manualPopulation').value;
+            const factories = document.getElementById('manualFactories').value;
+            const trees = document.getElementById('manualTrees').value;
+            const totalCars = document.getElementById('manualCars').value;
+            const busstation = document.getElementById('manualBus').value;
+            const height = document.getElementById('manualHeight').value;
+            const aqi = document.getElementById('manualAqi').value;
+
+            const isValid = (cityName.trim() !== '' && aqi.trim() !== '');
+            if (!isValid) return;
+
+            document.getElementById('cityNameDisplay').textContent = cityName;
+            document.getElementById('treesCount').textContent = trees || '...';
+            document.getElementById('totalcars').textContent = (totalCars ? Number(totalCars).toLocaleString() : '...');
+            document.getElementById('bus').textContent = busstation || '...';
+            document.getElementById('cityHeight').textContent = height || '...';
+            document.getElementById('populationCount').textContent = population || '...';
+            document.getElementById('factoriesCount').textContent = factories || '...';
+            document.getElementById('aqiCount').textContent = aqi || '...';
+
+            
+            selectedCityData = {
+                name: cityName,
+                population: population,
+                trees: trees,
+                factories: factories,
+                cars: totalCars,
+                busstations: busstation,    // עקבי עם הנתונים מה-JSON
+                aqi: aqi,
+                city_heights: height
+            };
+        }
+
+        // === חיזוי: שליפת נתונים מהכרטיסייה הגלויה ===
+        async function showPredictionResults() {
+            if (document.getElementById('envParamsCard').classList.contains('hidden')) {
+                return showMessageBox("בחר/י עיר או הזן/י ידנית ואז לחץ/י על 'הצג פרמטרים סביבתיים' לפני חיזוי.");
+            }
+
+            const predictButton = document.getElementById('predictButton3');
+            predictButton.disabled = true;
+            predictButton.innerHTML = `<div class="loading-spinner ml-2"></div><span>בצע חיזוי AI</span>`;
+
+            hideEl('predictionResultsCard');
+            hideEl('showRecommendationsBtn');
+            hideEl('showResultsAnalysisBtn');
+
+            // שליפה ישירה מה-UI
+            const cityName     = getTextFromEl('cityNameDisplay');
+            const trees        = getNumFromEl('treesCount');
+            const cars         = getNumFromEl('totalcars');
+            const busstations  = getNumFromEl('bus');
+            const population   = getNumFromEl('populationCount');
+            const factories    = getNumFromEl('factoriesCount');
+            const city_heights = getNumFromEl('cityHeight');
+            const currentAqi   = getNumFromEl('aqiCount');
+
+            const inputData = {
+                name_he: cityName,
+                numberofpop: population,
+                num_fact: factories,
+                trees: trees,
+                cars: cars,
+                bus: busstations,
+                city_heights: city_heights
+            };
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(inputData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.ok) {
+                    const predictedAqi = Number(result?.prediction?.value ?? NaN);
+                    const confidence = Number(result?.summary?.confidence_pct ?? 0);
+                    const r2 = Number(result?.summary?.r2 ?? 0);
+                    const rmse = Number(result?.summary?.rmse ?? 0);
+                    const mae = Number(result?.summary?.mae ?? 0);
+                    const importances = Array.isArray(result?.feature_importance) ? result.feature_importance : [];
+
+                    let status, colorClass;
+                    if (predictedAqi < 50) { status = "טוב"; colorClass = "aqi-good"; }
+                    else if (predictedAqi < 100) { status = "בינוני"; colorClass = "aqi-moderate"; }
+                    else { status = "גרוע"; colorClass = "aqi-unhealthy"; }
+
+                    document.getElementById('futureAqiValue').textContent = isFinite(predictedAqi) ? predictedAqi.toFixed(1) : '—';
+                    document.getElementById('futureAqiValue').className = `text-6xl font-extrabold my-2 ${colorClass}`;
+                    document.getElementById('futureAqiStatus').textContent = status;
+                    document.getElementById('futureAqiStatus').className = `text-xl font-medium my-2 ${colorClass}`;
+                    document.getElementById('currentAqiValue').textContent = isFinite(currentAqi) ? currentAqi.toString() : '—';
+                    document.getElementById('predictedAqiValue').textContent = isFinite(predictedAqi) ? predictedAqi.toFixed(1) : '—';
+                    document.getElementById('confidenceBar').style.width = `${Math.max(0, Math.min(100, confidence))}%`;
+                    document.getElementById('confidenceText').textContent = `${confidence.toFixed(1)}% ביטחון`;
+
+                    lastPrediction = {
+                        currentAqi,
+                        predictedAqi,
+                        confidence,
+                        r2,
+                        rmse,
+                        mae,
+                        importances: importances.map(item => ({
+                            label: String(item.feature ?? ''),
+                            value: Number(item.importance_pct ?? 0)
+                        }))
+                    };
+
+                    showEl('predictionResultsCard', 'flex');
+                    showEl('showRecommendationsBtn', 'flex');
+                    showEl('showResultsAnalysisBtn', 'flex');
+                } else {
+                    showMessageBox("אירעה שגיאה בחיזוי: " + (result.error || "לא ידוע."));
+                }
+            } catch (error) {
+                console.error('Prediction failed:', error);
+                showMessageBox("אירעה שגיאה בחיבור לשרת או בביצוע החיזוי. אנא נסה שוב.");
+            } finally {
+                predictButton.disabled = false;
+                predictButton.innerHTML = `<span>בצע חיזוי AI</span>`;
+            }
+        }
+
+        async function showRecommendationsModal() {
+            const content = document.getElementById('recommendationsContent');
+
+            if (!selectedCityData || !selectedCityData.name) {
+                return showMessageBox("בצע/י חיזוי תחילה כדי לקבל המלצות.");
+            }
+
+            showEl('recommendationsModal');
+            content.innerHTML = `
+                <div class="flex flex-col justify-center items-center h-48 space-y-4">
+                    <div class="loading-spinner"></div>
+                    <p class="text-lg font-semibold text-gray-700">המערכת מייצרת עבורך המלצות...</p>
+                </div>
+            `;
+
+            try {
+                const pythonResponse = await fetch('/api/generate_recommendations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(selectedCityData)
+                });
+                if (!pythonResponse.ok) {
+                    throw new Error(`שגיאה בשרת הפייתון: ${pythonResponse.status}`);
+                }
+                const resultFromPython = await pythonResponse.json();
+                const recommendations = resultFromPython.recommendations || [];
+
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/offer';
+                form.style.display = 'none';
+
+                const cityInput = document.createElement('input');
+                cityInput.type = 'hidden';
+                cityInput.name = 'cityData';
+                cityInput.value = JSON.stringify(selectedCityData);
+
+                const recsInput = document.createElement('input');
+                recsInput.type = 'hidden';
+                recsInput.name = 'recommendations';
+                recsInput.value = JSON.stringify(recommendations);
+
+                form.appendChild(cityInput);
+                form.appendChild(recsInput);
+                document.body.appendChild(form);
+                form.submit();
+
+            } catch (error) {
+                console.error('שגיאה בתהליך יצירת ההמלצות:', error);
+                content.innerHTML = `
+                    <div class="p-4 text-center text-red-600">
+                        אירעה שגיאה: ${error.message}. נסה/י שוב מאוחר יותר.
+                    </div>
+                `;
+            }
+        }
+
+        function hideRecommendationsModal() {
+            hideEl('recommendationsModal');
+        }
+
+        function showResultsAnalysisModal() {
+            if (!lastPrediction) {
+                return showMessageBox("בצע/י חיזוי תחילה כדי לצפות בניתוח התוצאות.");
+            }
+            const { r2, rmse, mae, confidence, importances } = lastPrediction;
+
+            document.getElementById('ra-r2').textContent = r2.toFixed(2);
+            document.getElementById('ra-errors').textContent = `RMSE: ${rmse.toFixed(1)} | MAE: ${mae.toFixed(1)}`;
+            document.getElementById('ra-features').textContent = importances.length;
+            document.getElementById('ra-confidence-bar').style.width = confidence + '%';
+            document.getElementById('ra-confidence-text').textContent = confidence.toFixed(1) + '% ביטחון';
+
+            const container = document.getElementById('ra-features-list');
+            container.innerHTML = '';
+            importances.forEach(({ label, value }) => {
+                const row = document.createElement('div');
+                row.className = 'w-full';
+                row.innerHTML = `
+                    <div class="flex justify-between text-sm mb-1">
+                        <span class="font-medium">${label}</span>
+                        <span class="text-dark-gray">${value.toFixed(1)}%</span>
+                    </div>
+                    <div class="w-full bg-light-gray rounded-full h-3">
+                        <div class="bg-primary-green h-3 rounded-full" style="width:${value}%"></div>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+
+            showEl('resultsAnalysisModal');
+        }
+
+        function hideResultsAnalysisModal() {
+            hideEl('resultsAnalysisModal');
+        }
+
+        // ====== INIT ======
+        window.onload = async function () {
+            map = L.map('leafletMap').setView([32.0853, 34.7818], 8);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            await fetchCityData();
+            toggleInputMethod();
+        };
+    </script>
+</body>
+</html>

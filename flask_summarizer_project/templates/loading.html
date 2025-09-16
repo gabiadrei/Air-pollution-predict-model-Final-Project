@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>טוען נתונים...</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&display=swap">
+    <style>
+        body {
+            font-family: 'Heebo', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #fff; /* רקע לבן */
+            color: #333; /* צבע טקסט כהה לרקע בהיר */
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            
+        }
+
+      
+
+        /* סגנון הדיב הראשי של הטעינה */
+        .loading-container {
+            padding: 20px;
+            border-radius: 10px;
+            background-color: rgba(0, 0, 0, 0.6);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: absolute;
+            z-index: 1;
+			width:600px;
+            margin-top: 20px; /* רווח מהקצה העליון */
+        }
+
+        .loader {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3DDC84;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        p {
+            font-size: 1.2rem;
+            color: #e0e0e0;
+        }
+
+        /* סגנון לסרטון המוטמע */
+        .centered-video {
+            display: block; /* כדי לאפשר מרכוז */
+            width: 80%;
+            max-width: 800px;
+            height: auto;
+            margin: 0 auto; /* מרכוז */
+            border-radius: 0;
+            box-shadow: none;
+			margin-top: 120px; /* רווח מהקצה העליון */
+        }
+
+        /* אנימציית עלים נופלים */
+        .leaf-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+        .leaf {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: #3DDC84;
+            border-radius: 50% 0;
+            opacity: 0;
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-100px) rotate(0deg);
+                opacity: 0;
+            }
+            10% { opacity: 1; }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="loading-container">
+        <h1 id="welcome-message">ברוך הבא, טוען...</h1>
+        <p>המערכת טוענת את הקבצים האחרונים.</p>
+        <div class="loader"></div>
+    </div>
+
+    <!-- קונטיינר לעלים הנופלים -->
+    <div class="leaf-container"></div>
+
+    <!-- הסרטון המוטמע במרכז העמוד -->
+    <video class="centered-video" autoplay muted loop playsinline>
+        <source src="{{ url_for('static', filename='images/1111.mp4') }}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    
+    <script>
+        // קוד JavaScript לקריאת שם המשתמש מכתובת ה-URL
+        const params = new URLSearchParams(window.location.search);
+        const username = params.get('username');
+        const welcomeMessage = document.getElementById('welcome-message');
+
+        if (username) {
+            welcomeMessage.textContent = `שלום ${username}, המערכת טוענת נתונים...`;
+        }
+
+        // קוד JavaScript ליצירת העלים הנופלים
+        const leafContainer = document.querySelector('.leaf-container');
+
+        const createLeaf = () => {
+            const leaf = document.createElement('div');
+            leaf.classList.add('leaf');
+            leaf.style.left = `${Math.random() * 100}vw`;
+            leaf.style.animationDuration = `${Math.random() * 5 + 5}s`;
+            leafContainer.appendChild(leaf);
+            setTimeout(() => {
+                leaf.remove();
+            }, 10000);
+        };
+        
+        setInterval(createLeaf, 300);
+		
+		// הפניה לדף /main לאחר 5 שניות
+        setTimeout(() => {
+            window.location.href = "/main";
+        }, 5000); 
+    </script>
+</body>
+</html>

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>כניסה למערכת</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- קישור לפונט Heebo מגוגל פונטס -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&display=swap">
+    
+    <style>
+        body {
+            /* שינוי הפונט לפונט Heebo */
+            font-family: 'Heebo', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            color: #fff;
+            position: relative;
+        }
+
+        /* סגנון הרקע והוידאו */
+        .video-background-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            overflow: hidden;
+        }
+
+        .video-background-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.2); /* רמת הכהייה ההתחלתית */
+            z-index: 1;
+            transition: background 1s ease-in;
+        }
+
+        /* סגנון טופס ההתחברות */
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 15px 15px 0 0; /* פינות מעוגלות רק בחלק העליון */
+            box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.5); /* צל למעלה */
+            max-width: 500px;
+            width: 100%; /* רוחב מלא כדי להתאים לתחתית העמוד */
+            position: fixed; /* מיקום קבוע בתחתית */
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%) translateY(100%); /* מוסתר בהתחלה מתחת למסך */
+            z-index: 1;
+
+            opacity: 0;
+            transition: opacity 1s ease-in, transform 1s ease-in; /* אנימציית הופעה */
+        }
+
+        .login-container.visible {
+            /* הצגת המכל והזזה למקומו הקבוע בתחתית המסך */
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        
+        /* הכהיית האוברליי כשכיתוב הכניסה מופיע */
+        .video-overlay.darken {
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .logo img {
+            width: 150px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            color: #ccc;
+        }
+
+        form {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .form-section {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+
+        .form-section label {
+            font-size: 1rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .input-group {
+            position: relative;
+            direction: ltr; /* Ensure LTR for input field and icon */
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 40px 12px 12px;
+            border: none;
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            box-sizing: border-box;
+            transition: border 0.3s ease;
+        }
+        
+        .input-group input:focus {
+            border: 1px solid #007bff;
+        }
+
+        .input-group input.error {
+            border: 1px solid #e74c3c;
+        }
+
+        .input-group input::placeholder {
+            color: #bbb;
+            opacity: 0.8;
+            font-weight: 300;
+        }
+
+        .input-group .icon {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #fff;
+            opacity: 0.6;
+        }
+
+        .input-group .right {
+            right: 15px;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.9rem;
+            text-align: right;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .login-button {
+            width: 100%;
+            padding: 15px;
+            background-color: #007bff;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-button i {
+            margin-left: 10px;
+        }
+
+        .login-button:hover {
+            background-color: #0056b3;
+        }
+
+        .forgot-password {
+            color: #ccc;
+            text-decoration: none;
+            font-size: 1rem;
+            margin-top: 15px;
+            display: block;
+        }
+
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+
+        .footer-section {
+            margin-top: 50px;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .footer-section p {
+            margin: 5px 0;
+        }
+
+        /* רספונסיביות */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            .subtitle {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="video-background-container">
+        <!-- Using the original source paths from the user's initial code -->
+        <video id="background-video" autoplay muted playsinline poster="images/back.png">
+            <source src="{{ url_for('static', filename='images/Futuristic_Israel_Environmental_Scan.mp4') }}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <div id="video-overlay" class="video-overlay"></div>
+    </div>
+
+    <div class="login-container">
+        <div class="logo">
+            <!-- Using the original source paths from the user's initial code -->
+            <img src="{{ url_for('static', filename='images/logodesign.png') }}" alt="Environment Data Logo">
+        </div>
+
+        <h1>כניסה למערכת</h1>
+        <p class="subtitle">מערכת חיזוי זיהום אוויר מתקדמת</p>
+
+        <form id="login-form" method="post" action="/Confirm">
+            <div class="form-section">
+                <label for="username">שם משתמש</label>
+                <div class="input-group">
+                    <input type="text" name="username" id="username" placeholder="הכנס שם משתמש">
+                    <span class="icon right"><i class="fas fa-user"></i></span>
+                </div>
+                <p id="username-error" class="error-message">שדה חובה</p>
+            </div>
+
+            <div class="form-section">
+                <label for="password">סיסמא</label>
+                <div class="input-group password">
+                    <input type="password" name="password" id="password" placeholder="הכנס סיסמא">
+                    <span class="icon right"><i class="fas fa-lock"></i></span>
+                </div>
+                <p id="password-error" class="error-message">שדה חובה</p>
+            </div>
+
+            <div style="position: relative; margin-bottom: 15px;">
+                <button type="submit" class="login-button">
+                    <i class="fas fa-bolt"></i>
+                    התחבר למערכת
+                </button>
+            </div>
+        </form>
+
+        <a href="#" class="forgot-password">שכחת סיסמא?</a>
+
+        <div class="footer-section">
+            <p>רשות איכות הסביבה - מדינת ישראל</p>
+            <p>מערכת מאובטחת ומוגנת</p>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('background-video');
+        const loginContainer = document.querySelector('.login-container');
+        const videoOverlay = document.getElementById('video-overlay');
+        let loginShown = false;
+
+        const showLogin = () => {
+            if (!loginShown) {
+                loginContainer.classList.add('visible');
+                videoOverlay.classList.add('darken');
+                loginShown = true;
+            }
+        };
+
+        video.addEventListener('timeupdate', () => {
+            if (video.currentTime >= video.duration - 4) {
+                showLogin();
+            }
+        });
+
+        video.addEventListener('ended', showLogin);
+        video.addEventListener('error', showLogin);
+        video.addEventListener('stalled', showLogin);
+        
+        if (video.readyState >= 3) {
+            if (video.duration > 4 && video.currentTime >= video.duration - 4) {
+                showLogin();
+            } else if (video.duration <= 4) {
+                showLogin();
+            }
+        }
+        
+        // קוד לאימות טופס
+        const loginForm = document.getElementById('login-form');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const usernameError = document.getElementById('username-error');
+        const passwordError = document.getElementById('password-error');
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault(); // מונע שליחה אוטומטית של הטופס
+            let isValid = true;
+
+            // איפוס הודעות שגיאה קודמות
+            usernameError.style.display = 'none';
+            passwordError.style.display = 'none';
+            usernameInput.classList.remove('error');
+            passwordInput.classList.remove('error');
+
+            if (usernameInput.value.trim() === '') {
+                usernameError.style.display = 'block';
+                usernameInput.classList.add('error');
+                isValid = false;
+            }
+
+            if (passwordInput.value.trim() === '') {
+                passwordError.style.display = 'block';
+                passwordInput.classList.add('error');
+                isValid = false;
+            }
+
+            if (isValid) {
+                // אם הטופס תקין, כאן אנו מאפשרים שליחה
+                console.log('טופס תקין! נשלח לשרת...');
+                loginForm.submit(); // השורה הזו שולחת את הטופס
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+[out:json];
+area['name'='ישראל']->.searchArea;
+relation['admin_level'='8'](area.searchArea);
+out geom;

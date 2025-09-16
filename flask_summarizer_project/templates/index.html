@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>רשת איכות הסביבה</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+<div class="video-background-container">
+  <video id="bg-video" autoplay muted playsinline preload="auto" poster="images/back.png">
+    <source src="{{ url_for('static', filename='images/indexbg2.mp4') }}" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  <div class="video-overlay"></div>
+</div>
+
+
+    <div class="main-container">
+        <header class="page-header">
+            <div class="header-logo-container">
+                <i class="fas fa-globe-americas"></i>
+            </div>
+            <h1>רשות איכות הסביבה</h1>
+            <h2>מערכת חיזוי זיהום אוויר מתקדמת</h2>
+            <p>
+                מערכת מתקדמת המבוססת על בינה מלאכותית ולמידת מכונה לחיזוי רמות<br>
+                זיהום האוויר בערים השונות בישראל. המערכת מספקת נתונים מדויקים, תחזיות<br>
+                מתקדמות והמלצות לשיפור איכות האוויר והסביבה.
+            </p>
+        </header>
+
+        <section class="cards-section">
+            <div class="card">
+                <div class="card-icon-container wind-icon">
+                    <i class="fas fa-wind"></i>
+                </div>
+                <h3>חיזוי מדויק</h3>
+                <p>
+                    אלגוריתמי AI מתקדמים<br>
+                    לחיזוי איכות אוויר
+                </p>
+            </div>
+            <div class="card">
+                <div class="card-icon-container globe-icon">
+                    <i class="fas fa-globe-americas"></i>
+                </div>
+                <h3>כיסוי ארצי</h3>
+                <p>
+                    מעקב ובקרה על כלל<br>
+                    הערים בישראל
+                </p>
+            </div>
+            <div class="card">
+                <div class="card-icon-container leaf-icon">
+                    <i class="fas fa-leaf"></i>
+                </div>
+                <h3>ניתוח סביבתי</h3>
+                <p>
+                    ניתוח ספציפי של גורמי<br>
+                    סביבה משפיעים
+                </p>
+            </div>
+        </section>
+        
+        <a href="/login" class="primary-button">
+            כניסה למערכת
+            <i class="fas fa-globe-americas"></i>
+        </a>
+    </div>
+</body>
+</html>

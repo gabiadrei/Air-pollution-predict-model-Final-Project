@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>רשות איכות הסביבה</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+	<link rel="stylesheet" href="{{ url_for('static', filename='homepage.css') }}">
+    <style>   
+</head>
+<body>
+    <header class="app-header">
+        <div class="logo-section">
+            <div class="header-logo-container">
+                <i class="fas fa-globe-americas"></i>
+            </div>
+            <div class="header-text">
+                <h2>רשות איכות הסביבה</h2>
+                <p>מערכת חיזוי זיהום אוויר</p>
+            </div>
+        </div>
+        <nav class="nav-links">
+            <a href="/main" class="active"><i class="fas fa-map-marked-alt"></i> מפה ארצית</a>
+            <a href="/predict"><i class="fas fa-chart-line"></i> חיזוי יומי</a>
+            <a href="/reports"><i class="fas fa-file-alt"></i> דוחות</a>
+        </nav>
+        <div class="user-profile">
+            <i class="fas fa-user-circle"></i>
+        </div>
+    </header>
+
+    <div class="main-layout">
+
+        <div class="main-map-area">
+            <div class="dashboard-cards-section">
+                <div class="cards-row">
+                    <div class="card icon-tree">
+                        <div class="icon-container"><i class="fas fa-tree"></i></div>
+                        <p class="card-text">כמות עצים</p>
+                        <h3 class="card-value" id="total-trees">0</h3>
+                    </div>
+                    <div class="card icon-factory">
+                        <div class="icon-container"><i class="fas fa-industry"></i></div>
+                        <p class="card-text">מפעלים מזהמים</p>
+                        <h3 class="card-value" id="total-factories">0</h3>
+                    </div>
+                    <div class="card icon-users">
+                        <div class="icon-container"><i class="fas fa-users"></i></div>
+                        <p class="card-text">אוכלוסייה כללית</p>
+                        <h3 class="card-value" id="total-population">0</h3>
+                    </div>
+                    <div class="card icon-car">
+                        <div class="icon-container"><i class="fas fa-car-side"></i></div>
+                        <p class="card-text">רכבים ממונעים</p>
+                        <h3 class="card-value" id="total-cars">0</h3>
+                    </div>
+                    <div class="card icon-electric">
+                        <div class="icon-container"><i class="fas fa-charging-station"></i></div>
+                        <p class="card-text">איכות אוויר ממוצעת</p>
+                        <h3 class="card-value" id="average-aqi">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="map-header">
+                <div class="map-header-right">
+                
+                    <button id="show-filtered-results" class="show-results-button">הצג טבלת תוצאות</button><br>
+
+<br><span id="locations-count" class="locations-on-map-count"></span>
+                </div>
+            </div>
+            <div id="israel-map" style="position: relative;">
+                <div class="map-toggles">
+                    <button id="toggle-street-map" title="מפת רחובות"><i class="fas fa-road"></i></button>
+                    <button id="toggle-satellite-map" class="active" title="תצלום אוויר"><i class="fas fa-satellite"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <div class="filter-buttons-above-map">
+                    <button id="filter-cities-btn" class="active" title="סינון לפי ערים">ערים</button>
+                    <button id="filter-councils-btn" title="סינון לפי מועצות אזוריות">מועצות אזוריות</button>
+                </div>
+            </div>
+        
+            <div class="sidebar-section search-section">
+                <h4>חיפוש מקום</h4>
+                <div class="search-container">
+                    <input type="text" id="search-input" placeholder="הקלד שם עיר/ישוב...">
+                     <ul id="search-results" class="search-results-list" style="display: none;"></ul>
+                </div>
+                
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-header">
+                    <h4>סינון נתונים</h4>
+                </div>
+                <div class="filter-group">
+                    <label>טווח AQI</label>
+                    <div class="slider-labels-container">
+                        <span class="value-label" id="aqi-min-label">45</span>
+                        <span class="value-label" id="aqi-max-label">80</span>
+                    </div>
+                    <div class="slider-control">
+                        <div class="multi-range-slider">
+                            <div class="range-track" id="aqi-range-track"></div>
+                            <input type="range" min="45" max="80" value="45" id="aqi-min-slider" step="1">
+                            <input type="range" min="45" max="80" value="80" id="aqi-max-slider" step="1">
+                        </div>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label>כמות עצים</label>
+                    <div class="slider-labels-container">
+                        <span class="value-label" id="trees-min-label">0</span>
+                        <span class="value-label" id="trees-max-label">223,028</span>
+                    </div>
+                    <div class="slider-control">
+                        <div class="multi-range-slider">
+                            <div class="range-track" id="trees-range-track"></div>
+                            <input type="range" min="0" max="223028" value="0" id="trees-min-slider" step="100">
+                            <input type="range" min="0" max="223028" value="223028" id="trees-max-slider" step="100">
+                        </div>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label>כמות מפעלים</label>
+                    <div class="slider-labels-container">
+                        <span class="value-label" id="factories-min-label">0</span>
+                        <span class="value-label" id="factories-max-label">19</span>
+                    </div>
+                    <div class="slider-control">
+                        <div class="multi-range-slider">
+                            <div class="range-track" id="factories-range-track"></div>
+                            <input type="range" min="0" max="19" value="0" id="factories-min-slider" step="1">
+                            <input type="range" min="0" max="19" value="19" id="factories-max-slider" step="1">
+                        </div>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label>כמות אוכלוסייה</label>
+                    <div class="slider-labels-container">
+                        <span class="value-label" id="population-min-label">61</span>
+                        <span class="value-label" id="population-max-label">981,711</span>
+                    </div>
+                    <div class="slider-control">
+                        <div class="multi-range-slider">
+                            <div class="range-track" id="population-range-track"></div>
+                            <input type="range" min="61" max="981711" value="61" id="population-min-slider" step="5000">
+                            <input type="range" min="61" max="981711" value="981711" id="population-max-slider" step="5000">
+                        </div>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label>גובה מעל פני הים</label>
+                    <div class="slider-labels-container">
+                        <span class="value-label" id="height-min-label">-350</span>
+                        <span class="value-label" id="height-max-label">1231</span>
+                    </div>
+                    <div class="slider-control">
+                        <div class="multi-range-slider">
+                            <div class="range-track" id="height-range-track"></div>
+                            <input type="range" min="-350" max="1231" value="-350" id="height-min-slider" step="10">
+                            <input type="range" min="-350" max="1231" value="1231" id="height-max-slider" step="10">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    
+    </div>
+    
+    <div id="results-list-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>תוצאות סינון</h3>
+                <span class="results-list-close-btn close-button">&times;</span>
+            </div>
+            <div id="filtered-table-container" style="margin-top: 20px;"></div>
+        </div>
+    </div>
+    
+    <div id="city-details-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close-button">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="modal-map" class="kml-map-container"></div>
+                <div class="modal-data-right">
+                    <div class="modal-main-details">
+                        <h3 id="modal-title-city"></h3>
+                        <p>נתונים מפורטים על איכות הסביבה במקום</p>
+                        <span id="modal-aqi-status" class="modal-aqi-status"></span>
+                    </div>
+                    <div id="modal-params-grid" class="modal-params-grid">
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-kml@1.7.1/dist/leaflet-kml.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-providers@1.13.0/leaflet-providers.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            
+            let locationsData = [];
+            let activeFilterType = 'עיר';
+            let previousCenter = {lat: 32.0, lng: 34.9};
+            let previousZoom = 9;
+            let currentZoomedCouncil = null;
+            let mainMap = null;
+            let markersLayer = null;
+            let settlementsLayer = null;
+            let isZoomingToCity = false; // דגל חדש לזיהוי אנימציית זום לעיר
+
+            // Define custom icon for regional councils
+            const councilIcon = L.divIcon({
+                html: '<i class="fas fa-map-marker-alt" style="color: #3498db; font-size: 24px;"></i>',
+                className: 'custom-icon',
+                iconSize: [24, 24],
+                iconAnchor: [12, 24],
+                tooltipAnchor: [12, -12]
+            });
+            
+            const councilSelectedIcon = L.divIcon({
+                html: '<i class="fas fa-map-marker-alt" style="color: #007bff; font-size: 30px;"></i>',
+                className: 'custom-icon-selected',
+                iconSize: [30, 30],
+                iconAnchor: [15, 30],
+                tooltipAnchor: [15, -15]
+            });
+
+
+            // Function to load and process data from both JSON files
+            const loadAndProcessData = async () => {
+                try {
+                    const [citiesSettlementsResponse, councilsResponse] = await Promise.all([
+                        fetch('static/data/newdatajsonfortest.json'),
+                        fetch('static/data/moaza_centers.json')
+                    ]);
+                    
+                    const citiesSettlementsData = await citiesSettlementsResponse.json();
+                    const councilsData = await councilsResponse.json();
+
+                    const cleanedCitiesSettlements = citiesSettlementsData.map(loc => ({
+                        ...loc,
+                        numberofpop: loc.numberofpop || 0,
+                        city_heights: loc.city_heights || 0,
+                        busStations: loc.busStations || 0,
+                        num_fact: loc.num_fact || 0,
+                        pol_fact: loc.pol_fact || 0,
+                        amount_of_pol: loc.amount_of_pol || 0,
+                        aqi_global: loc.aqi_global || 0,
+                        cars: loc.cars || 0,
+                        trees: loc.trees || 0,
+                        lat: loc.lat,
+                        lan: loc.lan
+                    })).filter(loc => loc.lat !== null && loc.lan !== null);
+
+                    const processedData = [...cleanedCitiesSettlements];
+
+                    councilsData.forEach(council => {
+                        const councilName = council['name:he'];
+                        const relatedSettlements = cleanedCitiesSettlements.filter(s => s.belogns === councilName);
+                        
+                        const totalPopulation = relatedSettlements.reduce((sum, s) => sum + s.numberofpop, 0);
+                        const totalTrees = relatedSettlements.reduce((sum, s) => sum + s.trees, 0);
+                        const totalFactories = relatedSettlements.reduce((sum, s) => sum + s.num_fact, 0);
+                        const averageAqi = relatedSettlements.length > 0 ? (relatedSettlements.reduce((sum, s) => sum + s.aqi_global, 0) / relatedSettlements.length) : 0;
+
+                        processedData.push({
+                            hebname: councilName,
+                            numberofpop: totalPopulation,
+                            num_fact: totalFactories,
+                            aqi_global: averageAqi,
+                            trees: totalTrees,
+                            lat: council.center.latitude,
+                            lan: council.center.longitude,
+                            type: 'מועצה אזורית',
+                            settlements: relatedSettlements
+                        });
+                    });
+
+                    return processedData;
+
+                } catch (error) {
+                    console.error('Failed to load or process data:', error);
+                    return [];
+                }
+            };
+            
+            locationsData = await loadAndProcessData();
+
+            const updateDashboardStats = (locations) => {
+                const totalPopulation = locations.reduce((sum, loc) => sum + (loc.numberofpop || 0), 0);
+                const totalFactories = locations.reduce((sum, loc) => sum + (loc.num_fact || 0), 0);
+                const totalTrees = locations.reduce((sum, loc) => sum + (loc.trees || 0), 0);
+                const totalCars = locations.reduce((sum, loc) => sum + (loc.cars || 0), 0);
+                const totalAqi = locations.filter(loc => loc.aqi_global !== null).reduce((sum, loc) => sum + (loc.aqi_global || 0), 0);
+                const validAqiLocations = locations.filter(loc => loc.aqi_global !== null);
+                const averageAqi = validAqiLocations.length > 0 ? (totalAqi / validAqiLocations.length).toFixed(0) : 0;
+                
+                document.getElementById('total-population').textContent = totalPopulation.toLocaleString();
+                document.getElementById('total-factories').textContent = totalFactories.toLocaleString();
+                document.getElementById('total-trees').textContent = totalTrees.toLocaleString();
+                document.getElementById('total-cars').textContent = totalCars.toLocaleString();
+                document.getElementById('average-aqi').textContent = averageAqi;
+            };
+
+            // UPDATED: New logic for marker colors based on user request
+            const getMarkerColor = (aqi) => {
+                if (aqi >= 65 && aqi <= 80) return '#3DDC84'; // Green (Low pollution)
+                if (aqi >= 55 && aqi < 65) return '#FF9800'; // Orange (Medium pollution)
+                if (aqi >= 45 && aqi < 55) return '#F44336'; // Red (High pollution)
+                return '#888888'; // Default grey for values outside the specified ranges
+            };
+            
+            const getMarkerRadius = (type) => {
+                return type === 'מועצה אזורית' ? 10 : 8;
+            };
+
+            // UPDATED: New logic for AQI status based on user request
+            const getAqiStatus = (aqi) => {
+                if (aqi >= 65 && aqi <= 80) return 'good';   // Low pollution
+                if (aqi >= 55 && aqi < 65) return 'medium'; // Medium pollution
+                if (aqi >= 45 && aqi < 55) return 'bad';    // High pollution
+                return 'unknown';
+            };
+
+            const filterBySliders = (locations) => {
+                const aqiMin = parseInt(document.getElementById('aqi-min-slider').value);
+                const aqiMax = parseInt(document.getElementById('aqi-max-slider').value);
+                const treesMin = parseInt(document.getElementById('trees-min-slider').value);
+                const treesMax = parseInt(document.getElementById('trees-max-slider').value);
+                const factoriesMin = parseInt(document.getElementById('factories-min-slider').value);
+                const factoriesMax = parseInt(document.getElementById('factories-max-slider').value);
+                const populationMin = parseInt(document.getElementById('population-min-slider').value);
+                const populationMax = parseInt(document.getElementById('population-max-slider').value);
+                const heightMin = parseInt(document.getElementById('height-min-slider').value);
+                const heightMax = parseInt(document.getElementById('height-max-slider').value);
+                const searchInput = document.getElementById('search-input').value.toLowerCase();
+
+                return locations.filter(loc =>
+                    (loc.aqi_global || 0) >= aqiMin && (loc.aqi_global || 0) <= aqiMax &&
+                    (loc.trees || 0) >= treesMin && (loc.trees || 0) <= treesMax &&
+                    (loc.num_fact || 0) >= factoriesMin && (loc.num_fact || 0) <= factoriesMax &&
+                    (loc.numberofpop || 0) >= populationMin && (loc.numberofpop || 0) <= populationMax &&
+                    (loc.city_heights || -400) >= heightMin && (loc.city_heights || -400) <= heightMax &&
+                    (loc.hebname || '').toLowerCase().includes(searchInput)
+                );
+            };
+            
+            const renderData = () => {
+                if (!mainMap) return;
+                
+                markersLayer.clearLayers();
+                settlementsLayer.clearLayers();
+
+                let dataToRender;
+                let filterTypeDisplay;
+
+                if (activeFilterType === 'עיר') {
+                    dataToRender = locationsData.filter(loc => loc.type === 'עיר');
+                    filterTypeDisplay = 'ערים';
+                } else if (currentZoomedCouncil) {
+                    dataToRender = currentZoomedCouncil.settlements;
+                    filterTypeDisplay = `יישובים במועצה ${currentZoomedCouncil.hebname}`;
+                } else { // 'מועצה אזורית' view
+                    const allCouncils = locationsData.filter(loc => loc.type === 'מועצה אזורית');
+                    dataToRender = allCouncils.filter(council => {
+                        const filteredSettlements = filterBySliders(council.settlements);
+                        return filteredSettlements.length > 0;
+                    });
+                    filterTypeDisplay = 'מועצות אזוריות';
+                }
+
+                const filteredData = activeFilterType === 'עיר' || currentZoomedCouncil ? filterBySliders(dataToRender) : dataToRender;
+
+                updateDashboardStats(filteredData);
+                
+                document.getElementById('locations-count').textContent = `${filteredData.length} ${filterTypeDisplay} מוצגות`;
+                
+                if (activeFilterType === 'מועצה אזורית' && !currentZoomedCouncil) {
+                    const settlementsCount = filteredData.reduce((sum, loc) => sum + (loc.settlements ? loc.settlements.length : 0), 0);
+                    document.getElementById('locations-count').textContent += `, ${settlementsCount} ישובים מקושרים`;
+                }
+
+                filteredData.forEach(location => {
+                    const markerColor = getMarkerColor(location.aqi_global);
+                    
+                    if (location.type === 'עיר') {
+                        const marker = L.circleMarker([location.lat, location.lan], {
+                            radius: 8,
+                            fillColor: markerColor,
+                            color: '#fff',
+                            weight: 1,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        });
+                        const tooltipContent = `<div class="styled-label">${location.hebname}</div>`;
+                        marker.bindTooltip(tooltipContent, { permanent: false, direction: "right", offset: [15, -10], className: 'custom-tooltip' });
+                        marker.on('click', () => {
+                            // שינוי כאן: הפעלת אנימציית זום לפני פתיחת המודל
+                            previousCenter = mainMap.getCenter();
+                            previousZoom = mainMap.getZoom();
+                            isZoomingToCity = true;
+                            mainMap.flyTo([location.lat, location.lan], 13, { duration: 3 });
+                        });
+                        markersLayer.addLayer(marker);
+                    } else if (location.type === 'מועצה אזורית') {
+                        const marker = L.marker([location.lat, location.lan], {
+                            icon: councilIcon
+                        });
+                        const tooltipContent = `<div class="styled-label">${location.hebname}</div>`;
+                        let isPermanent = currentZoomedCouncil && currentZoomedCouncil.hebname === location.hebname;
+                        marker.bindTooltip(tooltipContent, { permanent: isPermanent, direction: "right", offset: L.point(20, -10), className: `custom-tooltip ${isPermanent ? 'selected-council-label' : ''}` });
+                        if (isPermanent) {
+                           marker.openTooltip();
+                           marker.setIcon(councilSelectedIcon);
+                        }
+                        marker.on('click', () => {
+                            toggleCouncilSettlements(location, marker);
+                        });
+                        markersLayer.addLayer(marker);
+                        location.markerInstance = marker; // Store marker instance
+                    } else { // Settlements inside a council
+                        const marker = L.circleMarker([location.lat, location.lan], {
+                            radius: 6,
+                            fillColor: markerColor,
+                            color: '#fff',
+                            weight: 1,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        });
+                        const tooltipContent = `<div class="styled-label">${location.hebname}</div>`;
+                        marker.bindTooltip(tooltipContent, { permanent: true, direction: "bottom", offset: [0, 15], className: 'custom-tooltip' }).openTooltip();
+                        marker.on('click', () => {
+                            previousCenter = mainMap.getCenter();
+                            previousZoom = mainMap.getZoom();
+                            isZoomingToCity = true;
+                            mainMap.flyTo([location.lat, location.lan], 13, { duration: 3 });
+                        });
+                        settlementsLayer.addLayer(marker);
+                    }
+                });
+
+            };
+
+            const toggleCouncilSettlements = (council, marker) => {
+                if (currentZoomedCouncil && currentZoomedCouncil.hebname === council.hebname) {
+                    // Zoom out and clear settlements
+                    settlementsLayer.clearLayers();
+                    currentZoomedCouncil = null;
+                    mainMap.flyTo([previousCenter.lat, previousCenter.lng], previousZoom);
+                    // Reset marker style and tooltip
+                    marker.setIcon(councilIcon);
+                    marker.closeTooltip();
+                    marker.unbindTooltip();
+                    marker.bindTooltip(`<div class="styled-label">${council.hebname}</div>`, { permanent: false, direction: "right", offset: L.point(20, -10), className: 'custom-tooltip' });
+
+                } else {
+                    // Clear previous settlements and un-highlight previous council
+                    if (currentZoomedCouncil && currentZoomedCouncil.markerInstance) {
+                        currentZoomedCouncil.markerInstance.setIcon(councilIcon);
+                        currentZoomedCouncil.markerInstance.closeTooltip();
+                        currentZoomedCouncil.markerInstance.unbindTooltip();
+                        currentZoomedCouncil.markerInstance.bindTooltip(`<div class="styled-label">${currentZoomedCouncil.hebname}</div>`, { permanent: false, direction: "right", offset: L.point(20, -10), className: 'custom-tooltip' });
+                        settlementsLayer.clearLayers();
+                    }
+                    
+                    // Zoom in and show settlements
+                    currentZoomedCouncil = council;
+                    const settlements = council.settlements;
+                    
+                    marker.setIcon(councilSelectedIcon);
+                    marker.unbindTooltip();
+                    marker.bindTooltip(`<div class="styled-label selected-council-label">${council.hebname}</div>`, { permanent: true, direction: "right", offset: L.point(20, -10), className: 'custom-tooltip' }).openTooltip();
+                    
+                    if (settlements.length > 0) {
+                        const bounds = L.latLngBounds(settlements.map(s => [s.lat, s.lan]));
+                        mainMap.flyToBounds(bounds, { padding: [50, 50] });
+
+                        settlements.forEach(settlement => {
+                            const markerColor = getMarkerColor(settlement.aqi_global);
+                            
+                            const settlementMarker = L.circleMarker([settlement.lat, settlement.lan], {
+                                radius: 6,
+                                fillColor: markerColor,
+                                color: '#fff',
+                                weight: 1,
+                                opacity: 1,
+                                fillOpacity: 0.8
+                            });
+                            const settlementTooltipContent = `<div class="styled-label">${settlement.hebname}</div>`;
+                            settlementMarker.bindTooltip(settlementTooltipContent, { permanent: true, direction: "bottom", offset: [0, 15], className: 'custom-tooltip' }).openTooltip();
+                            settlementMarker.on('click', () => {
+                                previousCenter = mainMap.getCenter();
+                                previousZoom = mainMap.getZoom();
+                                isZoomingToCity = true;
+                                mainMap.flyTo([settlement.lat, settlement.lan], 13, { duration: 3 });
+                            });
+                            settlementsLayer.addLayer(settlementMarker);
+                        });
+                    }
+                }
+            };
+            
+            // UPDATED: Helper function to reset all sliders to their initial min/max values
+            const resetSliders = () => {
+                const sliders = [
+                    { id: 'aqi', min: 45, max: 80 },
+                    { id: 'trees', min: 0, max: 223028 },
+                    { id: 'factories', min: 0, max: 19 },
+                    { id: 'population', min: 61, max: 981711 },
+                    { id: 'height', min: -350, max: 1231 }
+                ];
+                
+                sliders.forEach(s => {
+                    const minSlider = document.getElementById(`${s.id}-min-slider`);
+                    const maxSlider = document.getElementById(`${s.id}-max-slider`);
+                    const minLabel = document.getElementById(`${s.id}-min-label`);
+                    const maxLabel = document.getElementById(`${s.id}-max-label`);
+
+                    if (minSlider && maxSlider && minLabel && maxLabel) {
+                        minSlider.value = s.min;
+                        maxSlider.value = s.max;
+                        minLabel.textContent = s.min.toLocaleString();
+                        maxLabel.textContent = s.max.toLocaleString();
+                    }
+                });
+            };
+
+            const updateFilterType = (type) => {
+                activeFilterType = type;
+                if(currentZoomedCouncil) {
+                    toggleCouncilSettlements(currentZoomedCouncil, currentZoomedCouncil.markerInstance);
+                }
+
+                document.getElementById('filter-cities-btn').classList.remove('active');
+                document.getElementById('filter-councils-btn').classList.remove('active');
+                document.getElementById(`filter-${type === 'עיר' ? 'cities' : 'councils'}-btn`).classList.add('active');
+
+                if (type === 'מועצה אזורית') {
+                    document.getElementById('search-input').placeholder = 'הקלד שם מועצה אזורית...';
+                } else {
+                    document.getElementById('search-input').placeholder = 'הקלד שם עיר/ישוב...';
+                }
+                resetSliders(); // Reset sliders whenever the filter type changes
+                renderData();
+            };
+
+            // Initial map setup
+            mainMap = L.map('israel-map').setView([previousCenter.lat, previousCenter.lng], previousZoom);
+            const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+            }).addTo(mainMap);
+            
+            const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            });
+            
+            markersLayer = L.layerGroup().addTo(mainMap);
+            settlementsLayer = L.layerGroup().addTo(mainMap);
+            
+            // UPDATED: Legend with new AQI ranges and descriptions
+            const legend = L.control({position: 'bottomright'});
+            legend.onAdd = function (map) {
+                const div = L.DomUtil.create('div', 'info legend');
+                div.innerHTML += '<b>מקרא AQI</b><br>';
+                div.innerHTML += '<i style="background:#F44336; border-radius: 50%;"></i> זיהום גבוה (45-55)<br>';
+                div.innerHTML += '<i style="background:#FF9800; border-radius: 50%;"></i> זיהום בינוני (55-65)<br>';
+                div.innerHTML += '<i style="background:#3DDC84; border-radius: 50%;"></i> זיהום נמוך (65-80)<br>';
+                div.innerHTML += '<i class="fas fa-map-marker-alt" style="color: #3498db; margin-left: 8px;"></i> מועצה אזורית<br>';
+                return div;
+            };
+            legend.addTo(mainMap);
+            
+            const toggleSatelliteBtn = document.getElementById('toggle-satellite-map');
+            const toggleStreetBtn = document.getElementById('toggle-street-map');
+            
+            if(toggleSatelliteBtn) {
+                toggleSatelliteBtn.addEventListener('click', () => {
+                    if (!mainMap.hasLayer(satelliteLayer)) {
+                        mainMap.removeLayer(streetLayer);
+                        mainMap.addLayer(satelliteLayer);
+                        toggleSatelliteBtn.classList.add('active');
+                        toggleStreetBtn.classList.remove('active');
+                    }
+                });
+            }
+            if(toggleStreetBtn) {
+                toggleStreetBtn.addEventListener('click', () => {
+                    if (!mainMap.hasLayer(streetLayer)) {
+                        mainMap.removeLayer(satelliteLayer);
+                        mainMap.addLayer(streetLayer);
+                        toggleStreetBtn.classList.add('active');
+                        toggleSatelliteBtn.classList.remove('active');
+                    }
+                });
+            }
+            
+            // Map click handler for zooming out
+            mainMap.on('click', (e) => {
+                if (currentZoomedCouncil && e.originalEvent.target.classList.contains('leaflet-container')) {
+                    toggleCouncilSettlements(currentZoomedCouncil, currentZoomedCouncil.markerInstance);
+                }
+            });
+
+            // האזנה לסיום אנימציית התנועה במפה
+            mainMap.on('moveend', () => {
+                if (isZoomingToCity) {
+                    // ברגע שהזום לעיר הסתיים, פותחים את המודל
+                    const center = mainMap.getCenter();
+                    const location = locationsData.find(loc => loc.lat === center.lat && loc.lan === center.lng);
+                    if (location) {
+                        showCityModal(location);
+                    }
+                    isZoomingToCity = false; // איפוס הדגל
+                }
+            });
+
+            // Main filter buttons
+            document.getElementById('filter-cities-btn').addEventListener('click', () => {
+                updateFilterType('עיר');
+            });
+            document.getElementById('filter-councils-btn').addEventListener('click', () => {
+                updateFilterType('מועצה אזורית');
+            });
+            
+            // Sliders functionality
+            const sliders = document.querySelectorAll('.sidebar .filter-group input[type="range"]');
+            sliders.forEach(slider => {
+                slider.addEventListener('input', () => {
+                    const id = slider.id;
+                    const labelId = id.replace('-slider', '-label');
+                    document.getElementById(labelId).textContent = parseInt(slider.value).toLocaleString();
+                    renderData();
+                });
+            });
+
+            const aqiMinSlider = document.getElementById('aqi-min-slider');
+            const aqiMaxSlider = document.getElementById('aqi-max-slider');
+            const treesMinSlider = document.getElementById('trees-min-slider');
+            const treesMaxSlider = document.getElementById('trees-max-slider');
+            const factoriesMinSlider = document.getElementById('factories-min-slider');
+            const factoriesMaxSlider = document.getElementById('factories-max-slider');
+            const populationMinSlider = document.getElementById('population-min-slider');
+            const populationMaxSlider = document.getElementById('population-max-slider');
+            const heightMinSlider = document.getElementById('height-min-slider');
+            const heightMaxSlider = document.getElementById('height-max-slider');
+            
+            aqiMinSlider.addEventListener('input', () => {
+                const newMin = parseInt(aqiMinSlider.value);
+                const newMax = parseInt(aqiMaxSlider.value);
+                if (newMin > newMax) {
+                    aqiMaxSlider.value = newMin;
+                    document.getElementById('aqi-max-label').textContent = newMin;
+                }
+                document.getElementById('aqi-min-label').textContent = newMin;
+                renderData();
+            });
+            aqiMaxSlider.addEventListener('input', () => {
+                const newMin = parseInt(aqiMinSlider.value);
+                const newMax = parseInt(aqiMaxSlider.value);
+                if (newMax < newMin) {
+                    aqiMinSlider.value = newMax;
+                    document.getElementById('aqi-min-label').textContent = newMax;
+                }
+                document.getElementById('aqi-max-label').textContent = newMax;
+                renderData();
+            });
+            
+            treesMinSlider.addEventListener('input', () => {
+                const newMin = parseInt(treesMinSlider.value);
+                const newMax = parseInt(treesMaxSlider.value);
+                if (newMin > newMax) {
+                    treesMaxSlider.value = newMin;
+                    document.getElementById('trees-max-label').textContent = newMin.toLocaleString();
+                }
+                document.getElementById('trees-min-label').textContent = newMin.toLocaleString();
+                renderData();
+            });
+            treesMaxSlider.addEventListener('input', () => {
+                const newMin = parseInt(treesMinSlider.value);
+                const newMax = parseInt(treesMaxSlider.value);
+                if (newMax < newMin) {
+                    treesMinSlider.value = newMax;
+                    document.getElementById('trees-min-label').textContent = newMax.toLocaleString();
+                }
+                document.getElementById('trees-max-label').textContent = newMax.toLocaleString();
+                renderData();
+            });
+            
+            factoriesMinSlider.addEventListener('input', () => {
+                const newMin = parseInt(factoriesMinSlider.value);
+                const newMax = parseInt(factoriesMaxSlider.value);
+                if (newMin > newMax) {
+                    factoriesMaxSlider.value = newMin;
+                    document.getElementById('factories-max-label').textContent = newMin;
+                }
+                document.getElementById('factories-min-label').textContent = newMin;
+                renderData();
+            });
+            factoriesMaxSlider.addEventListener('input', () => {
+                const newMin = parseInt(factoriesMinSlider.value);
+                const newMax = parseInt(factoriesMaxSlider.value);
+                if (newMax < newMin) {
+                    factoriesMinSlider.value = newMax;
+                    document.getElementById('factories-min-label').textContent = newMax;
+                }
+                document.getElementById('factories-max-label').textContent = newMax;
+                renderData();
+            });
+            
+            populationMinSlider.addEventListener('input', () => {
+                const newMin = parseInt(populationMinSlider.value);
+                const newMax = parseInt(populationMaxSlider.value);
+                if (newMin > newMax) {
+                    populationMaxSlider.value = newMin;
+                    document.getElementById('population-max-label').textContent = newMin.toLocaleString();
+                }
+                document.getElementById('population-min-label').textContent = newMin.toLocaleString();
+                renderData();
+            });
+            populationMaxSlider.addEventListener('input', () => {
+                const newMin = parseInt(populationMinSlider.value);
+                const newMax = parseInt(populationMaxSlider.value);
+                if (newMax < newMin) {
+                    populationMinSlider.value = newMax;
+                    document.getElementById('population-min-label').textContent = newMax.toLocaleString();
+                }
+                document.getElementById('population-max-label').textContent = newMax.toLocaleString();
+                renderData();
+            });
+            
+            heightMinSlider.addEventListener('input', () => {
+                const newMin = parseInt(heightMinSlider.value);
+                const newMax = parseInt(heightMaxSlider.value);
+                if (newMin > newMax) {
+                    heightMaxSlider.value = newMin;
+                    document.getElementById('height-max-label').textContent = newMin;
+                }
+                document.getElementById('height-min-label').textContent = newMin;
+                renderData();
+            });
+            heightMaxSlider.addEventListener('input', () => {
+                const newMin = parseInt(heightMinSlider.value);
+                const newMax = parseInt(heightMaxSlider.value);
+                if (newMax < newMin) {
+                    heightMinSlider.value = newMax;
+                    document.getElementById('height-min-label').textContent = newMax;
+                }
+                document.getElementById('height-max-label').textContent = newMax;
+                renderData();
+            });
+
+
+            // Search functionality
+            const searchInput = document.getElementById('search-input');
+            const searchResultsList = document.getElementById('search-results');
+            searchInput.addEventListener('input', () => {
+                const query = searchInput.value.toLowerCase();
+                let currentFilteredLocations;
+            
+                if (activeFilterType === 'עיר') {
+                    currentFilteredLocations = locationsData.filter(loc => loc.type === 'עיר');
+                } else if (currentZoomedCouncil) {
+                    currentFilteredLocations = currentZoomedCouncil.settlements;
+                } else {
+                    currentFilteredLocations = locationsData.filter(loc => loc.type === 'מועצה אזורית');
+                }
+                
+                const results = currentFilteredLocations.filter(loc => (loc.hebname || '').toLowerCase().includes(query));
+
+                if (query.trim() === '' || results.length === 0) {
+                    searchResultsList.style.display = 'none';
+                    searchResultsList.innerHTML = '';
+                } else {
+                    searchResultsList.innerHTML = results
+                        .map(loc => `<li data-name="${loc.hebname}">${loc.hebname}</li>`)
+                        .join('');
+                    searchResultsList.style.display = 'block';
+                }
+                renderData();
+            });
+
+            searchResultsList.addEventListener('click', (e) => {
+                if (e.target.tagName === 'LI') {
+                    const selectedName = e.target.getAttribute('data-name');
+                    searchInput.value = selectedName;
+                    searchResultsList.style.display = 'none';
+                    const selectedLocation = locationsData.find(loc => loc.hebname === selectedName);
+                    if (selectedLocation) {
+                        if (selectedLocation.type === 'מועצה אזורית') {
+                            toggleCouncilSettlements(selectedLocation, selectedLocation.markerInstance);
+                        } else {
+                            // שינוי כאן: הפעלת אנימציית זום מחיפוש
+                            previousCenter = mainMap.getCenter();
+                            previousZoom = mainMap.getZoom();
+                            isZoomingToCity = true;
+                            mainMap.flyTo([selectedLocation.lat, selectedLocation.lan], 13, { duration: 3 });
+                        }
+                    }
+                }
+            });
+            
+            // UPDATED: New logic for AQI status text based on user request
+            const getAqiStatusText = (status) => {
+                if (status === 'good') return 'זיהום נמוך';
+                if (status === 'medium') return 'זיהום בינוני';
+                if (status === 'bad') return 'זיהום גבוה';
+                return 'לא ידוע';
+            };
+
+            const resultsModal = document.getElementById('results-list-modal');
+            const resultsModalTitle = document.querySelector('#results-list-modal h3');
+
+            document.getElementById('show-filtered-results').addEventListener('click', () => {
+                let locationsToTable = [];
+                let tableTitle = 'תוצאות סינון';
+                let nameColumnTitle = 'מקום';
+
+                // Check if we are currently zoomed into a council
+                if (activeFilterType === 'מועצה אזורית' && currentZoomedCouncil) {
+                    locationsToTable = filterBySliders(currentZoomedCouncil.settlements);
+                    nameColumnTitle = 'יישוב';
+                    tableTitle = `יישובים במועצה ${currentZoomedCouncil.hebname}`;
+                } else if (activeFilterType === 'מועצה אזורית') {
+                    // This is the new logic for showing all settlements of filtered councils
+                    const filteredCouncils = filterBySliders(locationsData.filter(loc => loc.type === 'מועצה אזורית'));
+                    const allSettlements = locationsData.filter(loc => loc.type === 'עיר'); // Get all settlements
+                    const relevantSettlements = allSettlements.filter(settlement => 
+                        filteredCouncils.some(council => council.hebname === settlement.belogns)
+                    );
+                    locationsToTable = filterBySliders(relevantSettlements);
+                    nameColumnTitle = 'יישוב';
+                    tableTitle = 'תוצאות סינון מועצות אזוריות';
+                } else {
+                    // Default behavior for cities
+                    locationsToTable = filterBySliders(locationsData.filter(loc => loc.type === 'עיר'));
+                    nameColumnTitle = 'עיר';
+                    tableTitle = 'תוצאות סינון';
+                }
+                
+                const tableContainer = document.getElementById('filtered-table-container');
+                tableContainer.innerHTML = ''; // Clear previous table
+
+                if (locationsToTable.length === 0) {
+                    const noResultsMessage = document.createElement('div');
+                    noResultsMessage.style.textAlign = 'center';
+                    noResultsMessage.style.padding = '20px';
+                    noResultsMessage.style.color = '#777';
+                    noResultsMessage.innerHTML = '<h4>לא נמצאו תוצאות התואמות לסינון הנוכחי.</h4><p>נסה לשנות את טווחי הסליידרים או את החיפוש.</p>';
+                    tableContainer.appendChild(noResultsMessage);
+                } else {
+                    const table = document.createElement('table');
+                    table.className = 'city-list-table';
+                    
+                    // Dynamic table headers
+                    const headers = `
+                        <thead>
+                            <tr>
+                                <th>${nameColumnTitle}</th>
+                                ${activeFilterType === 'מועצה אזורית' ? '<th>שיוך</th>' : ''}
+                                <th>אוכלוסייה</th>
+                                <th>מפעלים</th>
+                                <th>עצים</th>
+                                <th>AQI</th>
+                            </tr>
+                        </thead>
+                    `;
+
+                    // Dynamic table rows
+                    const rows = locationsToTable.map(loc => {
+                        const aqiStatus = getAqiStatus(loc.aqi_global);
+                        const rowData = `
+                            <td>${loc.hebname}</td>
+                            ${activeFilterType === 'מועצה אזורית' ? `<td>${loc.belogns || 'אין שיוך'}</td>` : ''}
+                            <td><i class="fas fa-users"></i> ${loc.numberofpop.toLocaleString()}</td>
+                            <td><i class="fas fa-industry"></i> ${loc.num_fact}</td>
+                            <td><i class="fas fa-tree"></i> ${loc.trees.toLocaleString()}</td>
+                            <td><span class="aqi-badge aqi-${aqiStatus}">${getAqiStatusText(aqiStatus)}: ${loc.aqi_global.toFixed(0)}</span></td>
+                        `;
+                        return `<tr class='city-row' data-city='${JSON.stringify(loc).replace(/'/g, '"')}'>${rowData}</tr>`;
+                    }).join('');
+                    
+                    table.innerHTML = headers + `<tbody>${rows}</tbody>`;
+                    tableContainer.appendChild(table);
+                    
+                    table.querySelectorAll('.city-row').forEach(row => {
+                        row.addEventListener('click', () => {
+                            const location = JSON.parse(row.dataset.city.replace(/'/g, '"'));
+                            showCityModal(location);
+                            resultsModal.style.display = 'none';
+                        });
+                    });
+                }
+                
+                resultsModalTitle.textContent = tableTitle;
+                resultsModal.style.display = 'flex';
+            });
+            
+            document.querySelector('#results-list-modal .results-list-close-btn').addEventListener('click', () => {
+                resultsModal.style.display = 'none';
+            });
+
+            const modal = document.getElementById('city-details-modal');
+            const closeModalBtn = document.querySelector('#city-details-modal .close-button');
+            
+            let modalMapInstance = null;
+            
+            window.showCityModal = function(location) {
+                const modalParamsGrid = document.getElementById('modal-params-grid');
+                modalParamsGrid.innerHTML = '';
+                const modalTitleCity = document.getElementById('modal-title-city');
+                const modalAqiStatus = document.getElementById('modal-aqi-status');
+                
+                const aqiStatus = getAqiStatus(location.aqi_global);
+                
+                modalTitleCity.textContent = location.hebname;
+                modalAqiStatus.textContent = getAqiStatusText(aqiStatus);
+                modalAqiStatus.className = `modal-aqi-status aqi-${aqiStatus}-bg`;
+
+                const paramCards = [
+                    { icon: 'fas fa-industry', label: 'מפעלים', value: (location.num_fact || 0), color: 'red' },
+                    { icon: 'fas fa-tree', label: 'עצים', value: (location.trees || 0).toLocaleString(), color: 'green' },
+                    { icon: 'fas fa-users', label: 'אוכלוסייה', value: (location.numberofpop || 0).toLocaleString(), color: 'blue' },
+                    { icon: 'fas fa-wind', label: 'מדד איכות אוויר', value: (location.aqi_global || 0).toFixed(0), color: 'orange' },
+                    { icon: 'fas fa-car-side', label: 'רכבים', value: (location.cars || 0).toLocaleString(), color: 'gray' },
+                    { icon: 'fas fa-mountain', label: 'גובה (מטרים)', value: (location.city_heights || 0), color: 'brown' },
+                ];
+                
+                paramCards.forEach(card => {
+                    const cardElement = document.createElement('div');
+                    cardElement.className = `param-card param-card-${card.color}`;
+                    cardElement.innerHTML = `
+                        <span class="param-icon"><i class="${card.icon}"></i></span>
+                        <span class="param-value">${card.value}</span>
+                        <span class="param-label">${card.label}</span>
+                    `;
+                    modalParamsGrid.appendChild(cardElement);
+                });
+
+                modal.style.display = 'flex';
+
+                if (modalMapInstance) {
+                    modalMapInstance.remove();
+                }
+
+                modalMapInstance = L.map('modal-map').setView([location.lat, location.lan], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(modalMapInstance);
+                
+                L.marker([location.lat, location.lan]).addTo(modalMapInstance)
+                    .bindPopup(location.hebname)
+                    .openPopup();
+
+                setTimeout(() => {
+                    if (modalMapInstance) {
+                        modalMapInstance.invalidateSize();
+                    }
+                }, 10);
+            };
+
+            closeModalBtn.addEventListener('click', () => {
+                modal.style.display = 'none';
+                if (modalMapInstance) {
+                    modalMapInstance.remove();
+                    modalMapInstance = null;
+                }
+                // שינוי כאן: חזרה לנקודה המקורית עם אנימציה של 1.5 שניות
+                mainMap.flyTo([previousCenter.lat, previousCenter.lng], previousZoom, {
+                    animate: true,
+                    duration: 1.5
+                });
+                currentZoomedLocation = null;
+            });
+
+            window.onclick = function(event) {
+                if (event.target === modal || event.target === resultsModal) {
+                    modal.style.display = 'none';
+                    resultsModal.style.display = 'none';
+                    if (modalMapInstance) {
+                        modalMapInstance.remove();
+                        modalMapInstance = null;
+                    }
+                    // שינוי כאן: חזרה לנקודה המקורית עם אנימציה של 1.5 שניות
+                    mainMap.flyTo([previousCenter.lat, previousCenter.lng], previousZoom, {
+                        animate: true,
+                        duration: 1.5
+                    });
+                    currentZoomedLocation = null;
+                }
+            };
+            
+            updateFilterType('עיר');
+        });
+    </script>
+</body>
+</html>

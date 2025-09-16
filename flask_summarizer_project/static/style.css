@@ -1,0 +1,196 @@
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&display=swap');
+
+body {
+    margin: 0;
+    font-family: 'Heebo', sans-serif;
+    color: #333;
+    direction: rtl;
+    text-align: center;
+    background-color: #f7fcf9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    position: relative;
+	overflow-y:hidden;
+}
+
+.background-image-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('images/bg.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: -1;
+}
+/* סגנון לקונטיינר של הוידאו ברקע */
+        .video-background-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            z-index: -2;
+        }
+
+        .video-background-container video {
+            min-width: 120%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            object-fit: cover;
+        }
+
+        /* שכבת אוברליי לשיפור קריאות הטקסט */
+        .video-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+          
+        }
+
+.main-container {
+    max-width: 1200px;
+    width: 100%;
+    padding: 40px 20px;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.page-header {
+    margin-bottom: 50px;
+}
+
+.header-logo-container {
+    width: 80px;
+    height: 80px;
+    background-color: #3DDC84;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2.5rem;
+    margin: 0 auto 20px auto;
+}
+
+h1 {
+    font-size: 2.5rem;
+    color: #3DDC84;
+    margin: 0;
+}
+
+h2 {
+    font-size: 1.8rem;
+    color: #004d40;
+    margin: 10px 0 20px 0;
+}
+
+p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin: 0 auto;
+    color: white;
+    max-width: 700px;
+}
+
+.cards-section {
+    display: flex; /* Corrected: Using flexbox for proper spacing */
+    justify-content: center;
+    gap: 30px;
+    margin-bottom: 50px;
+    flex-wrap: wrap; /* Allows cards to wrap on smaller screens */
+}
+
+.card {
+    background-color: rgba(255, 255, 255, 0.45);
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    padding: 30px;
+    text-align: center;
+    transition: transform 0.3s ease;
+    flex: 1; /* Corrected: Each card takes up equal space */
+    min-width: 250px; /* Ensures cards don't get too small */
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card-icon-container {
+    width: 60px;
+    height: 60px;
+    background-color: #e6f6ec;
+    color: #3DDC84;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.8rem;
+    margin: 0 auto 20px auto;
+}
+
+.card-icon-container.leaf-icon {
+    color: #4CAF50;
+    background-color: #e8f5e9;
+}
+
+.card-icon-container.globe-icon {
+    color: #3DDC84;
+    background-color: #e6f6ec;
+}
+
+.card-icon-container.wind-icon {
+    color: #1E88E5;
+    background-color: #e3f2fd;
+}
+
+.card h3 {
+    font-size: 1.3rem;
+    color: #004d40;
+    margin: 0 0 10px 0;
+}
+
+.card p {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #666;
+    margin: 0;
+}
+
+.primary-button {
+    background-color: #3DDC84;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 30px;
+    font-weight: bold;
+    font-size: 1rem;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.primary-button:hover {
+    background-color: #32c474;
+}

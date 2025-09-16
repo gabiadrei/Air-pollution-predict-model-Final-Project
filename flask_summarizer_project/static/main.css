@@ -1,0 +1,206 @@
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&display=swap');
+
+body {
+    margin: 0;
+    font-family: 'Heebo', sans-serif;
+    color: #333;
+    direction: rtl;
+    background-color: #f0f4f8;
+}
+
+.app-header {
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-logo-container {
+    width: 40px;
+    height: 40px;
+    background-color: #3DDC84;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.header-text h2 {
+    font-size: 1.2rem;
+    margin: 0;
+    color: #004d40;
+}
+
+.header-text p {
+    font-size: 0.8rem;
+    margin: 0;
+    color: #666;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: #666;
+    padding: 10px 15px;
+    margin: 0 5px;
+    border-radius: 20px;
+    transition: background-color 0.3s;
+}
+
+.nav-links a:hover, .nav-links a.active {
+    background-color: #e6f6ec;
+    color: #3DDC84;
+}
+
+.user-profile {
+    font-size: 1.5rem;
+    color: #666;
+}
+
+.main-layout {
+    display: flex;
+    padding: 20px;
+    gap: 20px;
+}
+
+.main-map-area {
+    flex-grow: 1;
+}
+
+.map-title-bar {
+    background-color: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+#israel-map {
+    height: 60vh;
+    border-radius: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 1; /* Make sure map is above other elements */
+}
+
+.sidebar {
+    width: 300px;
+    background-color: white;
+    border-radius: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 20px;
+}
+
+.sidebar-section h4 {
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 10px;
+    margin-top: 0;
+}
+
+.quick-info-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.info-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.info-card-green {
+    background-color: #e6f6ec;
+}
+
+.info-card-blue {
+    background-color: #e3f2fd;
+}
+
+.info-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #3DDC84;
+}
+
+.info-card-blue .info-value {
+    color: #1E88E5;
+}
+
+.info-label {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+/* Modal Styling */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 100; /* Ensure modal is on top */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 500px;
+    border-radius: 15px;
+    position: relative;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-button:hover, .close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.city-list-container {
+    display: grid;
+    gap: 15px;
+    padding: 20px 0;
+}
+
+.city-item {
+    background-color: white;
+    padding: 15px;
+    border-radius: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
